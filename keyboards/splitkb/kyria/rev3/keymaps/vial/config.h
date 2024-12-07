@@ -11,7 +11,7 @@
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_MATRIX_KEYPRESSES
 
-#define DYNAMIC_KEYMAP_LAYER_COUNT 8
+#define DYNAMIC_KEYMAP_LAYER_COUNT 10
 
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */
 #define QUICK_TAP_TERM 100

@@ -11,6 +11,10 @@
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_MATRIX_KEYPRESSES
 
+// Usage of the microcontroler's LED as indicator of the CAPS Lock
+#define LED_CAPS_LOCK_PIN 24  
+#define LED_PIN_ON_STATE 0
+
 #define DYNAMIC_KEYMAP_LAYER_COUNT 10
 
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */

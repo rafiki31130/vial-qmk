@@ -12,3 +12,31 @@
 #define RGB_MATRIX_KEYPRESSES
 
 #define DYNAMIC_KEYMAP_LAYER_COUNT 8
+
+/* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */
+#define QUICK_TAP_TERM 100
+
+/* Permet de considérer la fonction HOLD lorsque la touche combinée est enfoncée+relachée avant que HOLD ne soit relaché, sans tenir compte du TAPPING_TERM */
+#define PERMISSIVE_HOLD
+
+/* Délais pour prendre en compte une fonction HOLD */
+#define TAPPING_TERM 180
+
+/* Désactive une correction dont j'ai pas tout compris mais sans ça, les home-row modifiers déclenchent tout le temps  */
+/* Deprecated: #define IGNORE_MOD_TAP_INTERRUPT */
+
+/* #define TAPPING_TERM_PER_KEY */
+/*
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case SFT_T(KC_SPC):
+            return TAPPING_TERM + 1250;
+        case LT(1, KC_GRV):
+            return 130;
+        default:
+            return TAPPING_TERM;
+    }
+}
+*/
+
+#define RGB_DISABLE_AFTER_TIMEOUT 300000 // Désactive les LEDs après X ms d'inactivité (0 pour désactiver)

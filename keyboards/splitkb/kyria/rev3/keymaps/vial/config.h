@@ -15,7 +15,16 @@
 #define LED_CAPS_LOCK_PIN 24  
 #define LED_PIN_ON_STATE 0
 
-#define DYNAMIC_KEYMAP_LAYER_COUNT 10
+#define DYNAMIC_KEYMAP_LAYER_COUNT 10 // default 8
+
+// Tweak of special features numbers
+#define VIAL_TAP_DANCE_ENTRIES 6 // default 32
+#define VIAL_COMBO_ENTRIES 6 // default 32
+// #define VIAL_KEY_OVERRIDE_ENTRIES x // Deactivated in rules.mk
+#define DYNAMIC_KEYMAP_MACRO_COUNT 32 //default 16
+
+
+
 
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */
 #define QUICK_TAP_TERM 100

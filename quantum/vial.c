@@ -500,10 +500,10 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 
     switch (keycode) {
         case LT(4, KC_GRV):
-            return 220;
+            return 250;
 
         case LT(6, KC_SPC):
-            return 220;
+            return 250;
 
         case LT(7, KC_ENT):
             return 220;

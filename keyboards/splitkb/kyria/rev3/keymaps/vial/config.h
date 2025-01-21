@@ -38,4 +38,4 @@
 /* Désactive une correction dont j'ai pas tout compris mais sans ça, les home-row modifiers déclenchent tout le temps  */
 /* Deprecated: #define IGNORE_MOD_TAP_INTERRUPT */
 
-#define RGB_DISABLE_AFTER_TIMEOUT 300000 // Désactive les LEDs après X ms d'inactivité (0 pour désactiver)
+//#define RGB_DISABLE_AFTER_TIMEOUT 300000 // Désactive les LEDs après X ms d'inactivité (0 pour désactiver)

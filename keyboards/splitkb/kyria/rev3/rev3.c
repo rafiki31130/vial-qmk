@@ -34,41 +34,67 @@
 #    endif
 #endif
 
-// uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
-//     switch (keycode) {
-//         case LT(4, KC_GRV):
-//             return 220;
 
-//         case LT(6, KC_SPC):
-//             return 220;
+#ifdef DEAD_ACCENT_AUTOREMOVAL
+bool accent_tap_pending = false;
+uint32_t accent_timer = 0;
+uint32_t accent_delay = 350;
+#endif
 
-//         case LT(7, KC_ENT):
-//             return 220;
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef DEAD_ACCENT_AUTOREMOVAL
+    if (accent_tap_pending && record->event.pressed) {
+        switch (keycode) {
+            case LT(4, KC_GRV):
+            case SFT_T(KC_QUOT):
+            case LSFT(KC_6):
+                break;
 
-//         case LT(8, KC_ENT):
-//             return 220;
+            default:
+                accent_tap_pending = false;
+                break;
+        }
+    }
 
+    switch (keycode) {
+        case LT(4, KC_GRV):
+            if (!record->event.pressed && record->tap.count > 0) {
+                accent_tap_pending = true;
+                accent_timer = timer_read();
+            }
+            break;
 
+        case RSFT_T(KC_QUOT):
+            if (!record->event.pressed && record->tap.count > 0) {
+                accent_tap_pending = true;
+                accent_timer = timer_read();
+            }
+            break;
 
-//         case SFT_T(KC_A):
-//             return 140;
+        case LSFT(KC_6):
+            if (!record->event.pressed) {
+                accent_tap_pending = true;
+                accent_timer = timer_read();
+            }
+            break;
 
-//         case SFT_T(KC_QUOT):
-//             return 140;
+        default:
+            break;
+    }
+#endif
 
-//         case SFT_T(KC_TAB):
-//             return 140;
+    return true;
+}
 
-//         case CTL_T(KC_ESC):
-//             return 140;
+void matrix_scan_user(void) {
+#ifdef DEAD_ACCENT_AUTOREMOVAL
+    if (accent_tap_pending) {
+        if (timer_elapsed(accent_timer) > accent_delay) {
+            tap_code(KC_SPC);
+            tap_code(KC_BSPC);
 
-
-
-//         case CTL_T(KC_SPC):
-//             return 140;
-
-//         // Par défaut, on utilise le TAPPING_TERM global
-//         default:
-//             return TAPPING_TERM;
-//     }
-// }
+            accent_tap_pending = false;
+        }
+    }
+#endif
+}

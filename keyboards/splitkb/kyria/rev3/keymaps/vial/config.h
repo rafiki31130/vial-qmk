@@ -38,18 +38,4 @@
 /* Désactive une correction dont j'ai pas tout compris mais sans ça, les home-row modifiers déclenchent tout le temps  */
 /* Deprecated: #define IGNORE_MOD_TAP_INTERRUPT */
 
-/* #define TAPPING_TERM_PER_KEY */
-/*
-uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-        case SFT_T(KC_SPC):
-            return TAPPING_TERM + 1250;
-        case LT(1, KC_GRV):
-            return 130;
-        default:
-            return TAPPING_TERM;
-    }
-}
-*/
-
 #define RGB_DISABLE_AFTER_TIMEOUT 300000 // Désactive les LEDs après X ms d'inactivité (0 pour désactiver)

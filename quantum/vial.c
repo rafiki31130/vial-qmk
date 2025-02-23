@@ -497,11 +497,47 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
             return td.custom_tapping_term;
     }
 #endif
+
+    switch (keycode) {
+        case LT(4, KC_GRV):
+            return 220;
+
+        case LT(6, KC_SPC):
+            return 220;
+
+        case LT(7, KC_ENT):
+            return 220;
+
+        case LT(8, KC_ENT):
+            return 220;
+
+
+
+        case SFT_T(KC_A):
+            return 160;
+
+        case SFT_T(KC_QUOT):
+            return 140;
+
+        case SFT_T(KC_TAB):
+            return 140;
+
+        case CTL_T(KC_ESC):
+            return 140;
+
+
+
+        case CTL_T(KC_SPC):
+            return 140;
+
+        // Par défaut, on utilise le TAPPING_TERM global
+        default:
 #ifdef QMK_SETTINGS
-    return qs_get_tapping_term(keycode, record);
+            return qs_get_tapping_term(keycode, record);
 #else
-    return TAPPING_TERM;
+            return TAPPING_TERM;
 #endif
+    }
 }
 
 uint16_t tap_dance_count(void) {

@@ -33,3 +33,107 @@
         const uint8_t PROGMEM encoder_hand_swap_config[NUM_ENCODERS] = {1,0};
 #    endif
 #endif
+
+
+#ifdef DEAD_ACCENT_AUTOREMOVAL
+bool accent_tap_pending = false;
+bool accent_key_pressed = false;
+bool accent_used_while_pressed = false;
+uint32_t accent_timer = 0;
+uint32_t accent_delay = 1000;
+#endif
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef DEAD_ACCENT_AUTOREMOVAL
+    if ( (accent_tap_pending || accent_key_pressed) && record->event.pressed) {
+        switch (keycode) {
+            case LT(4, KC_GRV):
+            case RSFT_T(KC_QUOT):
+            case LSFT(KC_6):
+            case LSFT_T(KC_BSPC):
+            case KC_BSPC:
+                break;
+
+            default:
+                accent_tap_pending = false;
+                if (accent_key_pressed) {
+                    accent_used_while_pressed = true;
+                }
+                break;
+        }
+    }
+
+    switch (keycode) {
+        case LSFT_T(KC_BSPC):
+        case KC_BSPC:
+            if (record->event.pressed && (accent_tap_pending || accent_key_pressed) ) {
+                tap_code(KC_SPC);
+                accent_tap_pending = false;
+                if (accent_key_pressed) {
+                    accent_used_while_pressed = true;
+                }
+            }
+            break;
+
+        case LT(4, KC_GRV):
+        case RSFT_T(KC_QUOT):
+            if (!record->event.pressed && record->tap.count > 0) {
+                if (!accent_tap_pending && !accent_used_while_pressed) {
+                    accent_tap_pending = true;
+                    accent_timer = timer_read();
+                } else {
+                    accent_tap_pending = false;
+                }
+                accent_key_pressed = false;
+                accent_used_while_pressed = false;
+            }
+            else if (record->event.pressed) {
+                accent_key_pressed = true;
+                accent_used_while_pressed = false;
+            }
+            else {
+                accent_key_pressed = false;
+                accent_used_while_pressed = false;
+                accent_tap_pending = false;
+            }
+            break;
+
+        case LSFT(KC_6):
+            if (!record->event.pressed) {
+                if (!accent_tap_pending && !accent_used_while_pressed) {
+                    accent_tap_pending = true;
+                    accent_timer = timer_read();
+                } else {
+                    accent_tap_pending = false;
+                }
+                accent_key_pressed = false;
+                accent_used_while_pressed = false;
+            }
+            else {
+                accent_key_pressed = true;
+                accent_used_while_pressed = false;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+#endif
+
+    return true;
+}
+
+void matrix_scan_user(void) {
+#ifdef DEAD_ACCENT_AUTOREMOVAL
+    if (accent_tap_pending) {
+        if (timer_elapsed(accent_timer) > accent_delay) {
+            tap_code(KC_SPC);
+            tap_code(KC_BSPC);
+
+            accent_tap_pending = false;
+        }
+    }
+
+#endif
+}

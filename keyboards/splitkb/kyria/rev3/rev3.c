@@ -34,7 +34,6 @@
 #    endif
 #endif
 
-
 #ifdef DEAD_ACCENT_AUTOREMOVAL
 bool accent_tap_pending = false;
 bool accent_key_pressed = false;

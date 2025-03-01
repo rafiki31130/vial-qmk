@@ -12,7 +12,7 @@
 #define RGB_MATRIX_KEYPRESSES
 
 // Usage of the microcontroler's LED as indicator of the CAPS Lock
-#define LED_CAPS_LOCK_PIN 24  
+#define LED_CAPS_LOCK_PIN 24
 #define LED_PIN_ON_STATE 0
 
 #define DYNAMIC_KEYMAP_LAYER_COUNT 10 // default 8
@@ -30,7 +30,7 @@
 #define QUICK_TAP_TERM 100
 
 /* Permet de considérer la fonction HOLD lorsque la touche combinée est enfoncée+relachée avant que HOLD ne soit relaché, sans tenir compte du TAPPING_TERM */
-#define PERMISSIVE_HOLD
+// #define PERMISSIVE_HOLD // Moved to rev3 config.h as PERMISSIVE_HOLD_PER_KEY
 
 /* Délais pour prendre en compte une fonction HOLD */
 #define TAPPING_TERM 180

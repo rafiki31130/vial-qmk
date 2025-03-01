@@ -261,7 +261,15 @@ uint16_t qs_get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool get_permissive_hold(uint16_t keycode, keyrecord_t *record) {
-    return QS.tapping & 1;
+    switch (keycode) {
+        case LT(4, KC_GRV):
+        case LT(6, KC_SPC):
+        case LT(7, KC_ENT):
+        case LT(8, KC_ENT):
+            return false;
+        default:
+            return QS.tapping & 1;
+    }
 }
 
 bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {

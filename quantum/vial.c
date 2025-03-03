@@ -499,6 +499,9 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 #endif
 
     switch (keycode) {
+        case LT(2, KC_QUOT):
+            return 220;
+
         case LT(4, KC_GRV):
             return 220;
 

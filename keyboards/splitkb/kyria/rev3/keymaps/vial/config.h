@@ -27,7 +27,7 @@
 
 
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */
-#define QUICK_TAP_TERM 100
+#define QUICK_TAP_TERM 60
 
 /* Permet de considérer la fonction HOLD lorsque la touche combinée est enfoncée+relachée avant que HOLD ne soit relaché, sans tenir compte du TAPPING_TERM */
 // #define PERMISSIVE_HOLD // Moved to rev3 config.h as PERMISSIVE_HOLD_PER_KEY

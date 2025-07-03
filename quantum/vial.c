@@ -517,10 +517,10 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 
 
         case SFT_T(KC_A):
-            return 200;
+            return 250;
 
         case SFT_T(KC_QUOT):
-            return 200;
+            return 250;
 
         case SFT_T(KC_TAB):
             return 140;

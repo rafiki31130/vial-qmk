@@ -23,7 +23,8 @@
 // #define VIAL_KEY_OVERRIDE_ENTRIES x // Deactivated in rules.mk
 #define DYNAMIC_KEYMAP_MACRO_COUNT 32 //default 16
 
-
+/* delay ajouté lors des combo (shift/crtl/alt/... + x)*/
+#define TAP_CODE_DELAY 20
 
 
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */

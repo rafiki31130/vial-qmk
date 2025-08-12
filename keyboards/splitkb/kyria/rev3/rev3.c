@@ -43,6 +43,31 @@ uint32_t accent_delay = 1000;
 #endif
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef PRE_MOD_DELAY
+    if (record->event.pressed) {
+        // Cible les wrappers de mods : S(kc), C(kc), LSA(kc), etc.
+        if (keycode >= QK_MODS && keycode <= QK_MODS_MAX) {
+            uint8_t  mods = QK_MODS_GET_MODS(keycode);              // bits MOD_*
+            uint16_t kc   = QK_MODS_GET_BASIC_KEYCODE(keycode);     // KC_ de base
+
+            uint8_t saved_mods = get_mods();    // pour ne pas casser l’état courant
+            clear_mods();
+
+            add_mods(mods);
+            send_keyboard_report();              // pousse immédiatement les mods
+            wait_ms(PRE_MOD_DELAY);              // <<< délai avant la frappe
+
+            tap_code16(kc);                      // frappe la touche (press+release)
+
+            del_mods(mods);
+            send_keyboard_report();
+
+            set_mods(saved_mods);                // restaure les mods tenus par l’utilisateur
+            return false;                        // on a géré l’événement
+        }
+    }
+#endif
+
 #ifdef DEAD_ACCENT_AUTOREMOVAL
     if ( (accent_tap_pending || accent_key_pressed) && record->event.pressed) {
         switch (keycode) {

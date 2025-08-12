@@ -26,7 +26,6 @@
 /* delay ajouté lors des combo (shift/crtl/alt/... + x)*/
 #define TAP_CODE_DELAY 20
 
-
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */
 #define QUICK_TAP_TERM 80
 

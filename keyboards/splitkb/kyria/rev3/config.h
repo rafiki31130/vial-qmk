@@ -19,10 +19,13 @@
 // #define OLED_DISPLAY_128X64
 // #define SPLIT_OLED_ENABLE
 
-#define DEAD_ACCENT_AUTOREMOVAL
+// Voir .\keyboards\splitkb\kyria\rev3\rev3.c - process_record_user()
+// #define DEAD_ACCENT_AUTOREMOVAL
 
+// Permissive Hold perkey .\quantum\qmk_settings.c
 #ifndef PERMISSIVE_HOLD_PER_KEY
 #define PERMISSIVE_HOLD_PER_KEY
 #endif
 
+// Voir .\keyboards\splitkb\kyria\rev3\rev3.c - process_record_user()
 #define PRE_MOD_DELAY 35

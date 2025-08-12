@@ -35,6 +35,11 @@
 /* Délais pour prendre en compte une fonction HOLD */
 #define TAPPING_TERM 180
 
+// Hold per key active ou non les délais de hold spécifiques par key dans le fichier .\quantum\vial.c
+#ifndef PERMISSIVE_HOLD_PER_KEY
+#define TAPPING_TERM_PER_KEY
+#endif
+
 /* Désactive une correction dont j'ai pas tout compris mais sans ça, les home-row modifiers déclenchent tout le temps  */
 /* Deprecated: #define IGNORE_MOD_TAP_INTERRUPT */
 

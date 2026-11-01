@@ -28,4 +28,11 @@
 #endif
 
 // Voir .\keyboards\splitkb\kyria\rev3\rev3.c - process_record_user()
-#define PRE_MOD_DELAY 35
+// Délai (ms) entre l'envoi du modificateur et celui de la touche pour les
+// keycodes du type LSFT(x), LCTL(x), C_S(x)...
+// Essais A/B sans modifier ce fichier :
+//   make splitkb/kyria/rev3:vial CONVERT_TO=liatris EXTRAFLAGS=-DPRE_MOD_DELAY=10
+// PRE_MOD_DELAY=0 désactive le mécanisme (comportement QMK d'origine).
+#ifndef PRE_MOD_DELAY
+#    define PRE_MOD_DELAY 35
+#endif

@@ -489,6 +489,12 @@ static void reload_tap_dance(void) {
 #endif
 
 #ifdef TAPPING_TERM_PER_KEY
+/* Délai tap/hold appliqué à une touche ; la première règle qui s'applique gagne :
+ * 1. Touche Tap Dance : délai de l'entrée TD (éditeur Tap Dance de Vial).
+ * 2. Exceptions du switch ci-dessous, comparées au keycode exact. Le côté du
+ *    modificateur compte : SFT_T(x) vaut LSFT_T(x) et ne couvre pas RSFT_T(x).
+ * 3. Sinon : réglage global Vial (QMK Settings > Tap-Hold > Tapping term).
+ * TAPPING_TERM (config.h) n'en est que la valeur d'usine. */
 uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 #ifdef VIAL_TAP_DANCE_ENABLE
     if (keycode >= QK_TAP_DANCE && keycode <= QK_TAP_DANCE_MAX) {

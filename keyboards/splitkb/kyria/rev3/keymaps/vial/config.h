@@ -32,12 +32,20 @@
 /* Permet de considérer la fonction HOLD lorsque la touche combinée est enfoncée+relachée avant que HOLD ne soit relaché, sans tenir compte du TAPPING_TERM */
 // #define PERMISSIVE_HOLD // Moved to rev3 config.h as PERMISSIVE_HOLD_PER_KEY
 
-/* Délais pour prendre en compte une fonction HOLD */
+/* Valeur d'usine du délai tap/hold global. Elle n'est utilisée que lorsque
+ * l'EEPROM Vial est réinitialisée (par ex. après un flash). Le délai global
+ * effectif est le réglage Vial : QMK Settings > Tap-Hold > Tapping term. */
 #define TAPPING_TERM 180
 
-// Hold per key active ou non les délais de hold spécifiques par key dans le fichier .\quantum\vial.c
-#ifndef PERMISSIVE_HOLD_PER_KEY
-#define TAPPING_TERM_PER_KEY
+/* Délais par touche : get_tapping_term() dans quantum/vial.c (ordre de priorité
+ * documenté à cet endroit).
+ * Avant : défini seulement si PERMISSIVE_HOLD_PER_KEY était absent, ce qui
+ * n'arrivait jamais. Le réglage restait actif uniquement parce que
+ * builddefs/build_vial.mk passe aussi -DTAPPING_TERM_PER_KEY (TAP_DANCE_ENABLE).
+ * Le #ifndef évite une redéfinition (erreur avec -Werror). rev3.c refuse de
+ * compiler si la macro manque. */
+#ifndef TAPPING_TERM_PER_KEY
+#    define TAPPING_TERM_PER_KEY
 #endif
 
 /* Désactive une correction dont j'ai pas tout compris mais sans ça, les home-row modifiers déclenchent tout le temps  */

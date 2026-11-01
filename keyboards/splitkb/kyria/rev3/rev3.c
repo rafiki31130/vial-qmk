@@ -16,6 +16,12 @@
 
 #include "quantum.h"
 
+// Sans TAPPING_TERM_PER_KEY, le moteur utiliserait la constante TAPPING_TERM :
+// le réglage Vial et les exceptions de quantum/vial.c seraient ignorés.
+#if defined(QMK_SETTINGS) && !defined(TAPPING_TERM_PER_KEY)
+#    error "TAPPING_TERM_PER_KEY inactif : réglage Vial et délais par touche ignorés"
+#endif
+
 #ifdef SWAP_HANDS_ENABLE
 // clang-format off
     __attribute__ ((weak)) const keypos_t PROGMEM hand_swap_config[MATRIX_ROWS][MATRIX_COLS] = {
@@ -43,7 +49,7 @@ uint32_t accent_delay = 1000;
 #endif
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-#ifdef PRE_MOD_DELAY
+#if defined(PRE_MOD_DELAY) && PRE_MOD_DELAY > 0
     if (keycode >= QK_MODS && keycode <= QK_MODS_MAX) {
         uint8_t  mods = QK_MODS_GET_MODS(keycode);          // ex: MOD_LSFT
         uint16_t kc   = QK_MODS_GET_BASIC_KEYCODE(keycode); // ex: KC_8

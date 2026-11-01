@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Banc de frappe Kyria (local)</title>
+<style>
+  body { font: 15px/1.45 system-ui, sans-serif; max-width: 60rem; margin: 1.5rem auto; padding: 0 1rem; color: #222; }
+  pre.ref { background: #f4f4f4; padding: .8rem; white-space: pre-wrap; font: 15px/1.5 ui-monospace, monospace; }
+  textarea { width: 100%; height: 12rem; font: 15px/1.5 ui-monospace, monospace; }
+  button, select { font: inherit; margin: .3rem .3rem .3rem 0; }
+  .note { color: #555; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  td, th { border: 1px solid #ccc; padding: .25rem .4rem; text-align: left; vertical-align: top; }
+  code { background: #eee; padding: 0 .2rem; }
+</style>
+</head>
+<body>
+<h1>Banc de frappe Kyria</h1>
+<p class="note">Page autonome : aucune connexion réseau, rien n'est enregistré hors de cet onglet tant que vous ne cliquez pas sur « Exporter ».
+Seul ce qui est tapé dans la zone ci-dessous est observé. Ne tapez ici que le texte de référence.</p>
+
+<label>Texte : <select id="set"></select></label>
+<button id="start">Commencer / recommencer</button>
+<button id="stop">Terminer et comparer</button>
+<button id="export" disabled>Exporter JSON</button>
+
+<pre class="ref" id="ref"></pre>
+<p class="note">Consignes : tapez le texte tel quel, sans corriger (pas de retour arrière). Dès que vous <em>sentez</em> une erreur,
+appuyez sur <code>Échap</code> : la marque est horodatée ici et apparaît aussi dans la trace du clavier (touche L20).</p>
+<textarea id="out" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" disabled></textarea>
+<p class="note" id="status">Choisissez un texte puis « Commencer ».</p>
+<label class="note">Notes libres (ressenti, contexte, application, OS) :<br><textarea id="notes" style="height:4rem"></textarea></label>
+<div id="result"></div>
+
+<script>
+"use strict";
+// Textes de référence. Chaque jeu cible un mécanisme ; ne changer qu'une variable par essai.
+const SETS = {
+  "fr-sans-accent": "de des depuis demande deux dans le sens de la loi\nse si son sur sous sans souvent assez aussi\nje jamais jour faire fait fin enfin effet\nau ai avant aussi avoir alors\nme ma moi mieux maison comme\nle beau blanc bonjour bref vous vivre avec",
+  "fr-accents": "il a été là, déjà prêt à répondre\nles élèves sont allés à la fête où tout était même plus gai\nça ne m'étonne guère : c'est déjà fini ?",
+  "code": "def parse(self, args):\n    if self.data and args[0] == 'x':\n        return {\"key\": fn(a, b)}\n    for i in range(10): print(f\"{i}\")\nconst f = (a, b) => { return a && b || !c; };",
+  "symboles": "() {} [] <> !? :; \"\" __ && || ** ## $$ %% @@ ^^ ++ -- ==",
+};
+const $ = id => document.getElementById(id);
+let t0 = performance.now(), firstInput = null, prev = "", times = [], marks = [], shortcuts = [], running = false, result = null;
+
+for (const k of Object.keys(SETS)) { const o = document.createElement("option"); o.value = o.textContent = k; $("set").appendChild(o); }
+const ref = () => SETS[$("set").value];
+const now = () => performance.now() - t0;
+$("set").onchange = () => { $("ref").textContent = ref(); };
+$("ref").textContent = ref();
+
+$("start").onclick = () => {
+  t0 = performance.now(); firstInput = null; prev = ""; times = []; marks = []; shortcuts = []; result = null;
+  $("out").value = ""; $("out").disabled = false; $("out").focus(); running = true;
+  $("export").disabled = true; $("result").innerHTML = ""; $("status").textContent = "En cours… (Échap = marquer une erreur ressentie)";
+};
+
+$("out").addEventListener("keydown", e => {
+  if (!running) return;
+  if (e.key === "Escape") { e.preventDefault(); marks.push(now()); $("status").textContent = `Marques : ${marks.length}`; return; }
+  if (e.ctrlKey || e.altKey || e.metaKey) {
+    // Raccourci déclenché pendant la frappe : on le note et on tente de l'empêcher.
+    if (!["Control", "Alt", "Meta", "Shift", "AltGraph"].includes(e.key)) {
+      shortcuts.push({ t: now(), key: e.key, ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey });
+      if (!(e.ctrlKey && e.altKey)) e.preventDefault(); // Ctrl+Alt = AltGr sous Windows : on laisse passer
+    }
+  }
+});
+
+$("out").addEventListener("input", () => {
+  if (!running) return;
+  const v = $("out").value, t = now();
+  if (firstInput === null) firstInput = t;
+  let p = 0; while (p < prev.length && p < v.length && prev[p] === v[p]) p++;
+  times = times.slice(0, p).concat(Array(v.length - p).fill(t)); // caractères nouveaux ou modifiés : horodatés maintenant
+  prev = v;
+});
+
+function align(a, b) { // Levenshtein avec chemin : liste d'opérations
+  const n = a.length, m = b.length, D = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+  for (let i = 0; i <= n; i++) D[i][0] = i;
+  for (let j = 0; j <= m; j++) D[0][j] = j;
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++)
+    D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1, D[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  const ops = []; let i = n, j = m;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && D[i][j] === D[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)) { ops.push([a[i - 1] === b[j - 1] ? "=" : "~", i - 1, j - 1]); i--; j--; }
+    else if (i > 0 && D[i][j] === D[i - 1][j] + 1) { ops.push(["-", i - 1, j]); i--; }
+    else { ops.push(["+", i, j - 1]); j--; }
+  }
+  return ops.reverse();
+}
+
+function classify(exp, got) {
+  if (!got) return "lettre(s) perdue(s)";
+  if (!exp) return "caractère(s) en trop";
+  if (/[A-Z]/.test(got) && exp.toLowerCase().includes(got.toLowerCase())) return "majuscule involontaire";
+  if (/m/.test(exp) && /[éáóíú]/.test(got)) return "voyelle accentuée (M pris pour AltGr ?)";
+  if (/[^\p{L}\p{N}\s]/u.test(got) && !/[^\p{L}\p{N}\s]/u.test(exp)) return "symbole inattendu (couche ?)";
+  if (/\d/.test(got) && !/\d/.test(exp)) return "chiffre inattendu (couche ?)";
+  if (exp.toLowerCase() === got.toLowerCase()) return "casse";
+  return "substitution";
+}
+
+$("stop").onclick = () => {
+  if (!running) return;
+  running = false; $("out").disabled = true;
+  const a = ref(), b = $("out").value, ops = align(a, b), errors = [];
+  let cur = null;
+  const flush = () => { if (cur) { errors.push(cur); cur = null; } };
+  for (const [op, i, j] of ops) {
+    if (op === "=") { flush(); continue; }
+    if (!cur) cur = { expected: "", got: "", ref_index: i, t: times[Math.min(j, times.length - 1)] ?? 0 };
+    if (op !== "+") cur.expected += a[i];
+    if (op !== "-") cur.got += b[j];
+  }
+  flush();
+  for (const e of errors) e.kind = classify(e.expected, e.got);
+  const last = errors[errors.length - 1]; // texte de référence pas tapé jusqu'au bout : pas une erreur
+  if (last && !last.got && last.ref_index + last.expected.length === a.length) last.kind = "non tapé (fin du texte)";
+  result = { version: 1, text_id: $("set").value, reference: a, output: b, first_input_ms: firstInput ?? 0,
+             duration_ms: now() - (firstInput ?? 0), errors, marks, shortcuts, notes: $("notes").value,
+             user_agent: navigator.userAgent, date: new Date().toISOString() };
+  const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]).replace(/\n/g, "⏎");
+  let h = `<h2>Résultat</h2><p>${errors.length} écart(s), ${marks.length} marque(s) Échap, ${shortcuts.length} raccourci(s) intercepté(s), ${(result.duration_ms / 1000).toFixed(1)} s.</p>`;
+  h += "<table><tr><th>t (ms)</th><th>type</th><th>attendu</th><th>obtenu</th><th>contexte</th></tr>";
+  for (const e of errors) h += `<tr><td>${e.t.toFixed(0)}</td><td>${e.kind}</td><td>${esc(e.expected)}</td><td>${esc(e.got)}</td><td>${esc(a.slice(Math.max(0, e.ref_index - 12), e.ref_index + 12))}</td></tr>`;
+  for (const s of shortcuts) h += `<tr><td>${s.t.toFixed(0)}</td><td>raccourci déclenché</td><td></td><td>${s.ctrl ? "Ctrl+" : ""}${s.alt ? "Alt+" : ""}${s.meta ? "Win+" : ""}${s.shift ? "Maj+" : ""}${esc(s.key)}</td><td></td></tr>`;
+  for (const m of marks) h += `<tr><td>${m.toFixed(0)}</td><td>marque Échap (erreur ressentie)</td><td></td><td></td><td></td></tr>`;
+  $("result").innerHTML = h + "</table>";
+  $("export").disabled = false;
+  $("status").textContent = "Terminé.";
+};
+
+$("export").onclick = () => {
+  if (!result) return;
+  result.notes = $("notes").value;
+  const blob = new Blob([JSON.stringify(result, null, 1)], { type: "application/json" });
+  const url = URL.createObjectURL(blob), link = document.createElement("a");
+  link.href = url; link.download = `banc_${result.text_id}_${result.date.replace(/[:.]/g, "-")}.json`; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+</script>
+</body>
+</html>

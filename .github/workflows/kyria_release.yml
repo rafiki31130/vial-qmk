@@ -2,6 +2,8 @@
 #
 # Déclencheurs :
 # - publication d'une release GitHub : compile le commit de son tag ;
+# - push d'un tag kyria-* (depuis n'importe quelle branche, ex. nightly) : crée
+#   la release, en pré-version si le tag contient « -rc », puis compile ;
 # - lancement manuel (Actions > Kyria release > Run workflow) avec le nom d'un
 #   tag dont la release existe déjà : recompile et remplace les fichiers joints.
 #
@@ -17,6 +19,8 @@ name: Kyria release
 on:
   release:
     types: [published]
+  push:
+    tags: ["kyria-*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -28,7 +32,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: kyria-release-${{ github.event.release.tag_name || inputs.tag }}
+  group: kyria-release-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -37,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/qmk/qmk_cli
     env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      TAG: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
       KB: splitkb/kyria/rev3
       KM: vial
       CONVERTER: liatris
@@ -85,6 +89,16 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # Tag poussé : la release n'existe pas encore. Créée avec GITHUB_TOKEN,
+      # elle ne redéclenche pas ce workflow (pas de double compilation).
+      - name: Créer la release (tag poussé)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Kyria ${{ env.TAG }}
+          prerelease: ${{ contains(github.ref_name, '-rc') }}
+
       - name: Joindre les fichiers à la release
         uses: softprops/action-gh-release@v2
         with:
@@ -93,9 +107,9 @@ jobs:
             dist/*.uf2
             dist/SHA256SUMS.txt
 
-      # Seulement à la publication : une relance manuelle ne doit pas dupliquer la note.
+      # Pas lors d'une relance manuelle : la note serait dupliquée.
       - name: Ajouter la note de flash au texte de la release
-        if: github.event_name == 'release'
+        if: github.event_name != 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}

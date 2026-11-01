@@ -49,7 +49,7 @@ uint32_t accent_delay = 1000;
 #endif
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-#ifdef PRE_MOD_DELAY
+#if defined(PRE_MOD_DELAY) && PRE_MOD_DELAY > 0
     if (keycode >= QK_MODS && keycode <= QK_MODS_MAX) {
         uint8_t  mods = QK_MODS_GET_MODS(keycode);          // ex: MOD_LSFT
         uint16_t kc   = QK_MODS_GET_BASIC_KEYCODE(keycode); // ex: KC_8

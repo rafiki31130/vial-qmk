@@ -16,6 +16,12 @@
 
 #include "quantum.h"
 
+// Sans TAPPING_TERM_PER_KEY, le moteur utiliserait la constante TAPPING_TERM :
+// le réglage Vial et les exceptions de quantum/vial.c seraient ignorés.
+#if defined(QMK_SETTINGS) && !defined(TAPPING_TERM_PER_KEY)
+#    error "TAPPING_TERM_PER_KEY inactif : réglage Vial et délais par touche ignorés"
+#endif
+
 #ifdef SWAP_HANDS_ENABLE
 // clang-format off
     __attribute__ ((weak)) const keypos_t PROGMEM hand_swap_config[MATRIX_ROWS][MATRIX_COLS] = {

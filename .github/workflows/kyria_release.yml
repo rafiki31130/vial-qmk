@@ -1,0 +1,112 @@
+# Compile le firmware du Kyria rev3 (Vial, Liatris) et l'attache à la release.
+#
+# Déclencheurs :
+# - publication d'une release GitHub : compile le commit de son tag ;
+# - lancement manuel (Actions > Kyria release > Run workflow) avec le nom d'un
+#   tag dont la release existe déjà : recompile et remplace les fichiers joints.
+#
+# Fichiers joints :
+# - kyria_rev3_vial_liatris_<tag>.uf2 : firmware normal ;
+# - kyria_rev3_vial_liatris_<tag>_TRACE.uf2 : firmware instrumenté temporaire
+#   (TAPHOLD_TRACE=yes). Seulement si le commit contient
+#   keymaps/vial/taphold_trace.c, sinon le drapeau serait ignoré en silence ;
+# - SHA256SUMS.txt.
+
+name: Kyria release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag de la release à compléter (elle doit déjà exister)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kyria-release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Compiler et joindre le firmware
+    runs-on: ubuntu-latest
+    container: ghcr.io/qmk/qmk_cli
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      KB: splitkb/kyria/rev3
+      KM: vial
+      CONVERTER: liatris
+
+    steps:
+      - name: Récupérer le code du tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          submodules: false
+          persist-credentials: false
+
+      - name: Récupérer les sous-modules utiles (RP2040)
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git submodule update --init --depth 1 lib/chibios lib/chibios-contrib lib/pico-sdk lib/printf
+
+      - name: Compiler le firmware normal
+        run: |
+          SAFE_TAG=$(printf '%s' "$TAG" | tr -c 'A-Za-z0-9._-' '_')
+          echo "SAFE_TAG=$SAFE_TAG" >> "$GITHUB_ENV"
+          mkdir -p dist
+          make "$KB:$KM" CONVERT_TO="$CONVERTER" -j"$(nproc)"
+          cp ".build/splitkb_kyria_rev3_${KM}_${CONVERTER}.uf2" "dist/kyria_rev3_vial_liatris_${SAFE_TAG}.uf2"
+
+      - name: Compiler le firmware instrumenté (si présent dans ce commit)
+        run: |
+          if [ -f "keyboards/$KB/keymaps/$KM/taphold_trace.c" ]; then
+            rm -rf .build
+            make "$KB:$KM" CONVERT_TO="$CONVERTER" TAPHOLD_TRACE=yes -j"$(nproc)"
+            cp ".build/splitkb_kyria_rev3_${KM}_${CONVERTER}.uf2" "dist/kyria_rev3_vial_liatris_${SAFE_TAG}_TRACE.uf2"
+          else
+            echo "taphold_trace.c absent de ce commit : pas de firmware instrumenté."
+          fi
+
+      - name: Sommes de contrôle
+        run: |
+          cd dist
+          sha256sum *.uf2 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          {
+            echo "### Firmware Kyria \`$TAG\` (commit \`$(git -C .. rev-parse --short HEAD)\`)"
+            echo '```'
+            cat SHA256SUMS.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Joindre les fichiers à la release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          files: |
+            dist/*.uf2
+            dist/SHA256SUMS.txt
+
+      # Seulement à la publication : une relance manuelle ne doit pas dupliquer la note.
+      - name: Ajouter la note de flash au texte de la release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          append_body: true
+          body: |
+
+            ---
+            **Firmware compilé automatiquement** (Liatris, `make splitkb/kyria/rev3:vial CONVERT_TO=liatris`).
+
+            - `kyria_rev3_vial_liatris_<tag>.uf2` : firmware normal.
+            - `kyria_rev3_vial_liatris_<tag>_TRACE.uf2` (s'il est présent) : firmware instrumenté **temporaire**, pour les sessions de mesure seulement (`keymaps/vial/docs/instrumentation.md`).
+            - `SHA256SUMS.txt` : à reporter dans le journal des essais.
+
+            ⚠️ Chaque compilation remet Vial à zéro au premier branchement (`BUILD_ID` aléatoire) : flasher les deux moitiés, puis **recharger `Kyria.vil`** et vérifier QMK Settings > Tap-Hold (procédure : `keymaps/vial/docs/audit_timing.md` §7).

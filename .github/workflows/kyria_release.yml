@@ -3,7 +3,9 @@
 # Déclencheurs :
 # - publication d'une release GitHub : compile le commit de son tag ;
 # - push d'un tag kyria-* (depuis n'importe quelle branche, ex. nightly) : crée
-#   la release, en pré-version si le tag contient « -rc », puis compile ;
+#   la release, en pré-version si le tag contient « -rc », puis compile.
+#   Créer une release dans l'interface avec un nouveau tag déclenche aussi ce
+#   push : il est alors ignoré (job « existing ») pour éviter une double compilation ;
 # - lancement manuel (Actions > Kyria release > Run workflow) avec le nom d'un
 #   tag dont la release existe déjà : recompile et remplace les fichiers joints.
 #
@@ -36,8 +38,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Tag poussé : la release existe-t-elle déjà (créée dans l'interface) ?
+  existing:
+    name: Release déjà créée ?
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$TAG")
+          echo "Réponse API pour $TAG : $code"
+          if [ "$code" = "200" ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
   build:
     name: Compiler et joindre le firmware
+    needs: existing
+    if: ${{ !cancelled() && (github.event_name != 'push' || needs.existing.outputs.exists == 'false') }}
     runs-on: ubuntu-latest
     container: ghcr.io/qmk/qmk_cli
     env:
@@ -58,6 +83,15 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git submodule update --init --depth 1 lib/chibios lib/chibios-contrib lib/pico-sdk lib/printf
+
+      # Le conteneur installe qmk dans son propre environnement Python, sans les
+      # dépendances de ce dépôt : sans elles, « qmk hello » échoue et make s'arrête.
+      - name: Installer les dépendances Python du dépôt
+        run: |
+          QMK_PY="$(sed -n '1s/^#!//p' "$(command -v qmk)")"
+          echo "Python de qmk : $QMK_PY"
+          "$QMK_PY" -m pip install --disable-pip-version-check -r requirements.txt
+          qmk hello
 
       - name: Compiler le firmware normal
         run: |

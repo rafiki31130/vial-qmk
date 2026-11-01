@@ -34,7 +34,6 @@
 #    endif
 #endif
 
-
 #ifdef DEAD_ACCENT_AUTOREMOVAL
 bool accent_tap_pending = false;
 bool accent_key_pressed = false;
@@ -44,6 +43,25 @@ uint32_t accent_delay = 1000;
 #endif
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef PRE_MOD_DELAY
+    if (keycode >= QK_MODS && keycode <= QK_MODS_MAX) {
+        uint8_t  mods = QK_MODS_GET_MODS(keycode);          // ex: MOD_LSFT
+        uint16_t kc   = QK_MODS_GET_BASIC_KEYCODE(keycode); // ex: KC_8
+
+        if (record->event.pressed) {
+            add_weak_mods(mods);         // n’écrase pas tes mods tenus physiquement
+            send_keyboard_report();
+            wait_ms(PRE_MOD_DELAY);      // ton délai avant la touche
+            register_code16(kc);         // KEY DOWN -> l’OS pourra auto-répéter
+        } else {
+            unregister_code16(kc);       // KEY UP
+            del_weak_mods(mods);
+            send_keyboard_report();
+        }
+        return false; // on gère nous-mêmes
+    }
+#endif
+
 #ifdef DEAD_ACCENT_AUTOREMOVAL
     if ( (accent_tap_pending || accent_key_pressed) && record->event.pressed) {
         switch (keycode) {

@@ -261,7 +261,22 @@ uint16_t qs_get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 }
 
 bool get_permissive_hold(uint16_t keycode, keyrecord_t *record) {
-    return QS.tapping & 1;
+    switch (keycode) {
+        case LSFT_T(KC_A):
+        case LT(3, KC_S):
+        case LT(8, KC_D):
+        case LT(2, KC_F):
+        case LCTL_T(KC_Z):
+        case LT(6, KC_SPC):
+        // case LCTL_T(KC_B):
+        // case RSFT_T(KC_QUOT):
+        case LT(2, KC_J):
+        case LSFT_T(KC_BSPC):
+        case LT(2, KC_QUOT):
+            return QS.tapping & 1;
+        default:
+            return false;
+    }
 }
 
 bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {

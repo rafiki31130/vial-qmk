@@ -12,7 +12,7 @@
 #define RGB_MATRIX_KEYPRESSES
 
 // Usage of the microcontroler's LED as indicator of the CAPS Lock
-#define LED_CAPS_LOCK_PIN 24  
+#define LED_CAPS_LOCK_PIN 24
 #define LED_PIN_ON_STATE 0
 
 #define DYNAMIC_KEYMAP_LAYER_COUNT 10 // default 8
@@ -23,17 +23,22 @@
 // #define VIAL_KEY_OVERRIDE_ENTRIES x // Deactivated in rules.mk
 #define DYNAMIC_KEYMAP_MACRO_COUNT 32 //default 16
 
-
-
+/* delay ajouté lors des combo (shift/crtl/alt/... + x)*/
+#define TAP_CODE_DELAY 20
 
 /* intervale de répétition empêchant le trigger de la fonction HOLD - default 120 */
-#define QUICK_TAP_TERM 100
+#define QUICK_TAP_TERM 80
 
 /* Permet de considérer la fonction HOLD lorsque la touche combinée est enfoncée+relachée avant que HOLD ne soit relaché, sans tenir compte du TAPPING_TERM */
-#define PERMISSIVE_HOLD
+// #define PERMISSIVE_HOLD // Moved to rev3 config.h as PERMISSIVE_HOLD_PER_KEY
 
 /* Délais pour prendre en compte une fonction HOLD */
 #define TAPPING_TERM 180
+
+// Hold per key active ou non les délais de hold spécifiques par key dans le fichier .\quantum\vial.c
+#ifndef PERMISSIVE_HOLD_PER_KEY
+#define TAPPING_TERM_PER_KEY
+#endif
 
 /* Désactive une correction dont j'ai pas tout compris mais sans ça, les home-row modifiers déclenchent tout le temps  */
 /* Deprecated: #define IGNORE_MOD_TAP_INTERRUPT */
